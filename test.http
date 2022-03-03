@@ -1,0 +1,25 @@
+GET http://127.0.0.1:8000/
+
+###
+GET http://127.0.0.1:8000/1
+
+### 
+POST http://127.0.0.1:8000/5
+
+{
+    "name": "New Item",
+    "description": "Beautiful New item",
+    "price": 1299.99
+}
+
+###
+PUT http://127.0.0.1:8000/1
+
+{
+  "name": "Dano Milk",
+  "description": "Sweet beautiful milk",
+  "price": 250.0
+}
+
+###
+DELETE http://127.0.0.1:8000/1
