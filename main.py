@@ -1,65 +1,76 @@
-from fastapi import FastAPI, HTTPException, status
-from typing import Optional
+from fastapi import FastAPI, HTTPException, status, Depends
+from typing import Optional, List
 from pydantic import BaseModel
+
+from sqlalchemy.orm import Session
+
+from db import get_db
+from models import Category
+from schemas import CategoryCreate, CategoryOut, CategoryOutWithItems, CategoryUpdate
 
 app = FastAPI()
 
-class ItemModel(BaseModel):
-    name: str
-    description: str
-    price: float
+@app.post("/category/create/", status_code=201, response_model=CategoryOut, tags=["Category"])
+def create_category(body: CategoryCreate,db: Session = Depends(get_db)):
+    category = Category(
+        name=body.name,
+        description=body.description
+    )
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category
+    
+@app.get("/category/all/", response_model=List[CategoryOut], tags=["Category"])
+def get_all_categories(db: Session = Depends(get_db)):
+    categories = db.query(Category).all()
+    return categories
 
-inventory = {
-    1: {
-        "name": "Peak Milk",
-        "description": "Sweet beautiful milk",
-        "price": 250.00
-    },
-    2: {
-        "name": "Nasco Cornflakes",
-        "description": "Sweet beautiful cornflakes",
-        "price": 100.00
-    },
-    3: {
-        "name": "Golden Morn",
-        "description": "Sweet beautiful gorden morn",
-        "price": 120.00
-    },
-}
 
-@app.get('/')
-def get_all_items(min_price: Optional[float] = None):
-    if min_price:
-        items = []
-        for key, value in inventory.items():
-            if value['price'] >= min_price:
-                items.append(inventory[key])
-        return items
-    return inventory
 
-@app.get("/{item_id}")
-def get_item_with_id(item_id: int):
-    if inventory.get(item_id) is None:
-        raise HTTPException(404, detail=f"Item with id {item_id} doesn't exist!")
-    return inventory[item_id]
+@app.get('/category/{id}/', response_model=CategoryOutWithItems, tags=["Category"])
+def get_category_with_id(id: int, db: Session = Depends(get_db)):
+    category = db.query(Category).get(id)
+    if not category:
+        raise HTTPException(404, f"Category with id {id} doesn't exist!")
+    return category
 
-@app.post('/{item_id}', status_code=status.HTTP_201_CREATED)
-def add_new_item_to_inventory(item_id: int, item: ItemModel):
-    if inventory.get(item_id) is not None:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=f"Item with id {item_id} exists!")
-    inventory[item_id] = item.dict()
-    return item
 
-@app.put('/{item_id}')
-def update_item(item_id: int, item: ItemModel):
-    if inventory.get(item_id) is None:
-        raise HTTPException(404, detail=f"Item with id {item_id} doesn't exist!")
-    inventory[item_id] = item.dict()
-    return inventory[item_id]
+@app.delete('/category/{id}/', tags=["Category"])
+def delete_category(id: int, db: Session = Depends(get_db)):
+    category = db.query(Category).get(id)
+    if not category:
+        raise HTTPException(404, f"Category with id {id} doesn't exist!")
+    db.delete(category)
+    db.commit()
+    return {"msg": "Done!"}
 
-@app.delete("/{item_id}")
-def delete_item(item_id: int):
-    if inventory.get(item_id) is None:
-        raise HTTPException(404, detail=f"Item with id {item_id} doesn't exist!")
-    del inventory[item_id]
-    return {"msg": "Item deleted!"}
+
+@app.put('/category/{id}/', tags=["Category"])
+def update_category(id: int, body: CategoryUpdate,db: Session = Depends(get_db)):
+    body = body.dict()
+    filtered_body = {}
+    
+    for key, value in body.items():
+        if value:
+            filtered_body[key] = value
+    
+    if not filtered_body:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nothing to update!")
+    
+    category = db.query(Category).filter(Category.id == id)
+    if not category:
+        raise HTTPException(404, f"Category with id {id} doesn't exist!")
+
+    category.update(filtered_body)
+    db.commit()
+    updated_category = db.query(Category).get(id)
+    return updated_category
+    
+    
+# /post/all/ - GET
+# /post/{id}/ - GET
+# /post/create/ - POST
+# /post/{id}/ - DELETE
+# /post/{id}/ - PUT
+

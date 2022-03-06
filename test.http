@@ -1,25 +1,14 @@
-GET http://127.0.0.1:8000/
+GET http://localhost:8000/category/all/
 
 ###
-GET http://127.0.0.1:8000/1
+GET http://localhost:8000/category/1/
 
-### 
-POST http://127.0.0.1:8000/5
+###
+DELETE  http://localhost:8000/category/5/
+
+###
+PUT http://localhost:8000/category/1/
 
 {
-    "name": "New Item",
-    "description": "Beautiful New item",
-    "price": 1299.99
+    "name": "Clothes"
 }
-
-###
-PUT http://127.0.0.1:8000/1
-
-{
-  "name": "Dano Milk",
-  "description": "Sweet beautiful milk",
-  "price": 250.0
-}
-
-###
-DELETE http://127.0.0.1:8000/1
