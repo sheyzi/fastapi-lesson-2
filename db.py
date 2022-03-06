@@ -3,6 +3,8 @@ from sqlalchemy.orm import sessionmaker
 
 CONNECTION_STRING = "sqlite:///./db.sqlite3"
 
+# This is a comment
+
 engine = create_engine(CONNECTION_STRING,
                        connect_args={"check_same_thread": False},
                        echo=True)
